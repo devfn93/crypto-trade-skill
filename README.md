@@ -136,6 +136,13 @@ with the firm's dashboard.
 **Liquidation prices are estimates** for isolated, USDT-margined contracts.
 Exchanges add tiers and fees; keep a margin of safety.
 
+## Related · مكتبات مرتبطة
+
+- [stock-trade-skill](https://github.com/devfn93/stock-trade-skill) — US stocks · الأسهم
+- [crypto-stock-trade](https://github.com/devfn93/crypto-stock-trade) — Both in one pack · الدمج
+
+If this helps you, a star on GitHub helps others find it. See [CONTRIBUTING.md](CONTRIBUTING.md) to report a bug or suggest a feature.
+
 ## Author
 
 **Esraa Fadhil Naif** · [github.com/devfn93](https://github.com/devfn93)
