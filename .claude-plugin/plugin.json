@@ -1,0 +1,18 @@
+{
+  "name": "crypto-trade-skill",
+  "description": "Six Claude skills for crypto traders: plan, size, risk-check, prop-firm limits, journal and spot rebalancing. Claude never places an order.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Esraa Fadhil Naif",
+    "url": "https://github.com/devfn93"
+  },
+  "homepage": "https://github.com/devfn93/crypto-trade-skill",
+  "repository": "https://github.com/devfn93/crypto-trade-skill",
+  "license": "MIT",
+  "keywords": [
+    "claude-skills",
+    "trading",
+    "risk-management"
+  ],
+  "skills": "./"
+}

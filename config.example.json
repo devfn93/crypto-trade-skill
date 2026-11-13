@@ -1,0 +1,31 @@
+{
+  "account_size": 2500,
+  "paper": true,
+
+  "risk_per_trade_pct": 1,
+  "max_risk_per_trade_pct": 1,
+  "max_total_open_risk_pct": 3,
+  "max_open_positions": 3,
+  "max_trades_per_day": 10,
+  "min_rr": 1.5,
+  "stop_loss_required": true,
+
+  "max_leverage": 10,
+  "default_leverage": 5,
+  "max_notional_usd": 0,
+  "allow_short": true,
+  "allowed_symbols": [],
+  "blocked_symbols": [],
+
+  "daily_loss_limit_pct": 5,
+  "daily_loss_base": "start_of_day",
+  "max_drawdown_pct": 10,
+  "drawdown_type": "static",
+  "trailing_locks_at_initial": false,
+  "profit_target_pct": 10,
+  "min_trading_days": 0,
+  "day_reset_utc": "00:00",
+
+  "taker_fee_pct": 0.05,
+  "maintenance_margin_pct": 0.5
+}

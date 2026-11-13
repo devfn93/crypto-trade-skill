@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "crypto-trade-skill",
+  "description": "Six Claude skills for crypto traders: plan, size, risk-check, prop-firm limits, journal and spot rebalancing. Claude never places an order.",
+  "owner": {
+    "name": "Esraa Fadhil Naif",
+    "url": "https://github.com/devfn93"
+  },
+  "plugins": [
+    {
+      "name": "crypto-trade-skill",
+      "description": "Six Claude skills for crypto traders: plan, size, risk-check, prop-firm limits, journal and spot rebalancing. Claude never places an order.",
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/devfn93/crypto-trade-skill"
+    }
+  ]
+}
