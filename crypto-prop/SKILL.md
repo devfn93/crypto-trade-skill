@@ -6,9 +6,10 @@ description: >-
   daily loss used and left, max drawdown used and left (static or
   trailing), profit target progress, trading days, and the most the next
   trade may risk without breaking a rule. Says STOP when a limit is used
-  up. Use when the user says "how much can I lose today", "am I safe",
+  up. Also simulates thousands of challenges to compare pass and bust rates
+  at each risk size. Use when the user says "how much can I lose today", "am I safe",
   "challenge status", "drawdown left", "daily loss", "prop firm rules",
-  "funded account", "حالة التحدي", "كم باقي خسارة يومية", "الدرو داون".
+  "funded account", "what risk should I use", "chance to pass", "حالة التحدي", "كم باقي خسارة يومية", "الدرو داون".
 ---
 
 # crypto-prop
@@ -52,6 +53,25 @@ stricter reading and say which one you picked.
 3. If it says STOP, say it plainly: no new trades until the reset (daily) or
    at all (drawdown). Do not help size a trade that would break a rule.
 4. Open trades without a stop are unknown risk: flag them first.
+
+## Step 3: choose the risk per trade with numbers
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/simulate.py" --win-rate 45 --avg-win-r 2 --avg-loss-r 1
+python3 "${CLAUDE_SKILL_DIR}/simulate.py" --from-journal      # the user's real results, 20+ trades
+```
+
+It runs thousands of random challenges under the firm's rules and prints, for
+each risk size, how often the challenge passes, breaks a rule, or runs out of
+time. `raw` takes every trade at full size; `guarded` never risks more than
+the room left (what `/crypto-risk` enforces).
+
+- Read it as a comparison between risk sizes: where does the pass rate stop
+  rising while the bust rate keeps climbing? That is usually the size to stay under.
+- If expectancy is zero or negative, say so plainly: no risk size helps;
+  the strategy needs work first (`/crypto-backtest`, `/crypto-journal` review).
+- It assumes independent trades and that past numbers hold. Never present a
+  pass percentage as a forecast.
 
 ## Notes
 

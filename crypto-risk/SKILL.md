@@ -5,7 +5,7 @@ description: >-
   user's rules before they place it and blocks anything over them: stop loss
   required, max risk per trade, max leverage, liquidation before the stop,
   minimum reward:risk, margin vs balance, max open positions and total open
-  risk, daily loss room and max drawdown room (prop-firm style), blocked or
+  risk, same-direction (correlated) risk, a cooldown after losses, daily loss room and max drawdown room (prop-firm style), blocked or
   allowed symbols, shorts, duplicates and trades per day. Prints PASS or
   BLOCK with the reason, and a ticket for each PASS. Use when the user says
   "check my trade", "is this safe", "risk check", "does this break my
@@ -58,6 +58,11 @@ batch that is fine one by one but too much together is caught.
 | daily loss | the loss at stop is more than the daily loss room left |
 | drawdown | the loss at stop could break the max drawdown floor |
 | frequency | over `max_trades_per_day`; same symbol and side already open or planned |
+| discipline | `max_losses_per_day` losing trades today; `cooldown_after_losses` in a row (wait `cooldown_minutes`, or until tomorrow if 0) |
+| correlation | this trade plus open trades in the same direction is over `max_same_side_risk_pct`: coins move together, so three alt shorts are one bet |
+
+When `reduce_risk_after_drawdown_used_pct` of the drawdown allowance is used,
+risk per trade is multiplied by `reduced_risk_factor` until the account recovers.
 
 Warnings do not block, but say them: an open trade without a stop, a LIVE
 account, no target given.

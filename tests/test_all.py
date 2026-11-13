@@ -70,7 +70,8 @@ class TestProp(unittest.TestCase):
 
     def test_ledger_code_identical(self):
         def block(path):
-            src = open(os.path.join(ROOT, path)).read()
+            with open(os.path.join(ROOT, path)) as f:
+                src = f.read()
             a = src.index("def parse_time")
             return src[a:src.index("# ---- end ledger ----")]
         self.assertEqual(block("crypto-prop/prop.py"), block("crypto-risk/check.py"))

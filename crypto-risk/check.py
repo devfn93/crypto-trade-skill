@@ -67,15 +67,26 @@ def ledger(cfg, journal, now):
     start = day_start(now, cfg.get("day_reset_utc", "00:00"))
     balance = hwm = initial
     today = 0.0
+    losses_today = streak_today = 0
+    last_loss = None
     for t in closed:
         p = trade_pnl(t, fee)
         balance += p
         hwm = max(hwm, balance)
         if parse_time(t["closed"]) >= start:
             today += p
+            if p <= 0:
+                losses_today += 1
+                streak_today += 1
+                last_loss = t["closed"]
+            else:
+                streak_today = 0
     sod = balance - today
     unknown_risk = [t["id"] for t in opened if t.get("stop") is None]
     open_risk = sum(max(0.0, risk_at_stop(t, fee) or 0.0) for t in opened)
+    by_side = {"long": 0.0, "short": 0.0}
+    for t in opened:
+        by_side[t["side"]] = by_side.get(t["side"], 0.0) + max(0.0, risk_at_stop(t, fee) or 0.0)
     open_margin = sum(t["qty"] * t["entry"] / (t.get("leverage") or 1) for t in opened)
     base = sod if cfg.get("daily_loss_base", "start_of_day") == "start_of_day" else initial
     daily_limit = base * cfg.get("daily_loss_limit_pct", 100) / 100.0
@@ -88,6 +99,9 @@ def ledger(cfg, journal, now):
     else:
         floor = initial * (1 - dd)
     dd_room = balance - open_risk - floor
+    top = hwm if cfg.get("drawdown_type", "static") == "trailing" else initial
+    allowance = max(top - floor, 1e-9)
+    dd_used_pct = max(0.0, (allowance - (balance - floor)) / allowance * 100)
     days = sorted({day_start(parse_time(t["opened"]), cfg.get("day_reset_utc", "00:00")).date().isoformat()
                    for t in trades if t.get("opened")})
     target_pct = cfg.get("profit_target_pct")
@@ -106,6 +120,11 @@ def ledger(cfg, journal, now):
         "daily_room": round(daily_room, 2),
         "drawdown_floor": round(floor, 2),
         "drawdown_room": round(dd_room, 2),
+        "drawdown_used_pct": round(dd_used_pct, 1),
+        "open_risk_by_side": {k: round(v, 2) for k, v in by_side.items()},
+        "losses_today": losses_today,
+        "loss_streak_today": streak_today,
+        "last_loss_time": last_loss,
         "trades_today": trades_today,
         "trading_days": len(days),
         "profit_pct": round((balance - initial) / initial * 100, 2),
@@ -170,8 +189,28 @@ def check_orders(cfg, journal, orders, now):
             results.append({"index": i, "order": o, "verdict": "BLOCK", "reasons": reasons, "warnings": warnings})
             continue
 
+        # discipline guards
+        scale = 1.0
+        thr = cfg.get("reduce_risk_after_drawdown_used_pct")
+        if thr and s["drawdown_used_pct"] >= thr:
+            scale = cfg.get("reduced_risk_factor", 0.5)
+            warnings.append("drawdown {}% used: risk per trade cut to x{}".format(s["drawdown_used_pct"], scale))
+        if cfg.get("max_losses_per_day") and s["losses_today"] >= cfg["max_losses_per_day"]:
+            reasons.append("{} losing trades today (your max is {}): stop for today".format(
+                s["losses_today"], cfg["max_losses_per_day"]))
+        n_cool = cfg.get("cooldown_after_losses")
+        if n_cool and s["loss_streak_today"] >= n_cool:
+            mins = cfg.get("cooldown_minutes", 0)
+            if not mins:
+                reasons.append("{} losses in a row today: your rules stop trading until tomorrow".format(s["loss_streak_today"]))
+            else:
+                since = (now - parse_time(s["last_loss_time"])).total_seconds() / 60.0
+                if since < mins:
+                    reasons.append("{} losses in a row: cooldown, wait {:.0f} more minutes".format(
+                        s["loss_streak_today"], mins - since))
+
         # size: use the given qty, or size it from risk_per_trade_pct
-        risk_budget = s["balance"] * cfg.get("risk_per_trade_pct", 1) / 100.0
+        risk_budget = s["balance"] * cfg.get("risk_per_trade_pct", 1) / 100.0 * scale
         per_unit = abs(entry - stop) + (entry + stop) * fee / 100.0 if stop else None
         if not o.get("qty"):
             if not per_unit:
@@ -207,7 +246,7 @@ def check_orders(cfg, journal, orders, now):
             reasons.append("liquidation (~{:.6g}) comes before your stop: lower the leverage".format(liq))
 
         # per-trade risk
-        max_risk = s["balance"] * cfg.get("max_risk_per_trade_pct", cfg.get("risk_per_trade_pct", 1)) / 100.0
+        max_risk = s["balance"] * cfg.get("max_risk_per_trade_pct", cfg.get("risk_per_trade_pct", 1)) / 100.0 * scale
         if risk is not None and risk > max_risk * 1.01:
             reasons.append("risk ${:,.2f} is over your max per trade ${:,.2f}".format(risk, max_risk))
         if cfg.get("max_notional_usd") and notional > cfg["max_notional_usd"]:
@@ -237,6 +276,12 @@ def check_orders(cfg, journal, orders, now):
             cap = s["balance"] * cfg["max_total_open_risk_pct"] / 100.0
             if s["open_risk"] + risk > cap * 1.01:
                 reasons.append("total open risk would be ${:,.2f}, over your cap ${:,.2f}".format(s["open_risk"] + risk, cap))
+        if cfg.get("max_same_side_risk_pct") and risk is not None:
+            cap = s["balance"] * cfg["max_same_side_risk_pct"] / 100.0
+            same = s["open_risk_by_side"].get(side, 0.0)
+            if same > 0 and same + risk > cap * 1.01:
+                reasons.append("{} risk would be ${:,.2f}, over your same-direction cap ${:,.2f}: "
+                               "coins move together, so this is one bet on the market".format(side, same + risk, cap))
         if risk is not None and risk > s["daily_room"]:
             reasons.append("risk ${:,.2f} is more than the daily loss room left ${:,.2f}".format(risk, max(0, s["daily_room"])))
         if risk is not None and risk > s["drawdown_room"]:

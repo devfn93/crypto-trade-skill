@@ -22,7 +22,8 @@ much that costs. The user decides.
 The full flow of the pack:
 
 ```
-crypto-prop (room left today) -> crypto-plan -> crypto-size -> crypto-risk -> user places it -> crypto-journal
+crypto-backtest (is the rule any good?) -> crypto-prop (room left today) -> crypto-plan -> crypto-size
+  -> crypto-risk -> user places it -> crypto-journal (log, then review)
 ```
 
 ## Step 1: get real data

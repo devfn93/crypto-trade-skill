@@ -7,7 +7,7 @@ description: >-
   loss, profit factor, expectancy, average R, worst losing streak, P&L by
   coin and by long/short. Use when the user says "log this trade", "I
   closed", "I got stopped out", "my stats", "review my trades", "what am I
-  doing wrong", "سجل الصفقة", "سكرت الصفقة", "احصائياتي".
+  doing wrong", "import my history", "سجل الصفقة", "سكرت الصفقة", "احصائياتي".
 ---
 
 # crypto-journal
@@ -24,6 +24,38 @@ python3 "${CLAUDE_SKILL_DIR}/journal.py" close --id 2 --exit 470 --fees 0.48 --f
 python3 "${CLAUDE_SKILL_DIR}/journal.py" list --open
 python3 "${CLAUDE_SKILL_DIR}/journal.py" stats
 ```
+
+## Import from the exchange
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/import_csv.py" history.csv --tz-offset 3 --dry-run
+python3 "${CLAUDE_SKILL_DIR}/import_csv.py" history.csv --tz-offset 3
+python3 "${CLAUDE_SKILL_DIR}/import_csv.py" history.csv --map entry="Avg Entry" exit="Avg Exit"
+```
+
+Loads closed trades from a CSV export. Always run `--dry-run` first and check
+the first lines with the user against the exchange: if longs and shorts look
+swapped, the export lists the closing order, so add `--closing-side`. Use
+`--map field=Column` for columns it did not find. Already-imported trades are
+skipped. Never ask for API keys to fetch history: the user exports the file.
+
+## Review: where the money is made and lost
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/review.py"            # local time from tz_offset_hours in the config
+```
+
+Breaks results down by coin, side, weekday, hour, holding time and tag
+(`journal.py open ... --tags breakout retest`), and compares trades taken
+after a loss with trades after a win, including quick re-entries (within 15
+minutes of a loss). Read the findings with the user:
+
+- Point at the biggest leak first (a coin, an hour, a side, revenge trades)
+  and suggest one rule change at a time, e.g. a blocked symbol, a cooldown,
+  no trades in a losing hour.
+- Groups marked `(few)` are too small to conclude from. Under about 30 trades
+  in total, everything is a hint, not a fact.
+- A pattern in the past is not a promise. Suggest testing a change on demo.
 
 ## Steps
 

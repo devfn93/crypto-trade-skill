@@ -109,6 +109,7 @@ def main(argv=None):
     o.add_argument("--leverage", type=float, default=1)
     o.add_argument("--opened", help="ISO time, default now (UTC)")
     o.add_argument("--notes", default="")
+    o.add_argument("--tags", nargs="*", default=[], help="setup names, e.g. breakout retest")
     c = sub.add_parser("close")
     c.add_argument("--id", type=int, required=True)
     c.add_argument("--exit", type=float, required=True)
@@ -138,7 +139,7 @@ def main(argv=None):
         t = {"id": max([x["id"] for x in trades] or [0]) + 1, "symbol": a.symbol.upper(),
              "side": a.side, "entry": a.entry, "stop": a.stop, "qty": a.qty,
              "leverage": a.leverage, "opened": a.opened or now_iso(), "status": "open",
-             "notes": a.notes}
+             "notes": a.notes, "tags": [x.lower() for x in a.tags]}
         t["initial_risk_usd"] = round(risk_at_stop(t, fee), 2) if a.stop is not None else None
         trades.append(t)
         save(a.journal, j)

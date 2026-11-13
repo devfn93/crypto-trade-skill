@@ -66,15 +66,26 @@ def ledger(cfg, journal, now):
     start = day_start(now, cfg.get("day_reset_utc", "00:00"))
     balance = hwm = initial
     today = 0.0
+    losses_today = streak_today = 0
+    last_loss = None
     for t in closed:
         p = trade_pnl(t, fee)
         balance += p
         hwm = max(hwm, balance)
         if parse_time(t["closed"]) >= start:
             today += p
+            if p <= 0:
+                losses_today += 1
+                streak_today += 1
+                last_loss = t["closed"]
+            else:
+                streak_today = 0
     sod = balance - today
     unknown_risk = [t["id"] for t in opened if t.get("stop") is None]
     open_risk = sum(max(0.0, risk_at_stop(t, fee) or 0.0) for t in opened)
+    by_side = {"long": 0.0, "short": 0.0}
+    for t in opened:
+        by_side[t["side"]] = by_side.get(t["side"], 0.0) + max(0.0, risk_at_stop(t, fee) or 0.0)
     open_margin = sum(t["qty"] * t["entry"] / (t.get("leverage") or 1) for t in opened)
     base = sod if cfg.get("daily_loss_base", "start_of_day") == "start_of_day" else initial
     daily_limit = base * cfg.get("daily_loss_limit_pct", 100) / 100.0
@@ -87,6 +98,9 @@ def ledger(cfg, journal, now):
     else:
         floor = initial * (1 - dd)
     dd_room = balance - open_risk - floor
+    top = hwm if cfg.get("drawdown_type", "static") == "trailing" else initial
+    allowance = max(top - floor, 1e-9)
+    dd_used_pct = max(0.0, (allowance - (balance - floor)) / allowance * 100)
     days = sorted({day_start(parse_time(t["opened"]), cfg.get("day_reset_utc", "00:00")).date().isoformat()
                    for t in trades if t.get("opened")})
     target_pct = cfg.get("profit_target_pct")
@@ -105,6 +119,11 @@ def ledger(cfg, journal, now):
         "daily_room": round(daily_room, 2),
         "drawdown_floor": round(floor, 2),
         "drawdown_room": round(dd_room, 2),
+        "drawdown_used_pct": round(dd_used_pct, 1),
+        "open_risk_by_side": {k: round(v, 2) for k, v in by_side.items()},
+        "losses_today": losses_today,
+        "loss_streak_today": streak_today,
+        "last_loss_time": last_loss,
         "trades_today": trades_today,
         "trading_days": len(days),
         "profit_pct": round((balance - initial) / initial * 100, 2),
@@ -133,6 +152,12 @@ def render(s, cfg):
     if cfg.get("min_trading_days"):
         lines.append("Trading days     {} of {}".format(s["trading_days"], cfg["min_trading_days"]))
     lines.append("Next trade may risk at most {} without breaking a rule".format(money(s["max_next_risk"])))
+    if s["losses_today"]:
+        lines.append("Losses today     {} ({} in a row)".format(s["losses_today"], s["loss_streak_today"]))
+    thr = cfg.get("reduce_risk_after_drawdown_used_pct")
+    if thr and s["drawdown_used_pct"] >= thr:
+        lines.append("Drawdown used {}%: your rules cut risk per trade to x{} until you recover.".format(
+            s["drawdown_used_pct"], cfg.get("reduced_risk_factor", 0.5)))
     if s["open_without_stop"]:
         lines.append("DANGER: open trade(s) without a stop: #{}. Their risk is unknown.".format(
             ", #".join(str(i) for i in s["open_without_stop"])))

@@ -40,6 +40,20 @@ cp config.example.json crypto/config.json
 | `max_open_positions` | `3` | Open trades at the same time | عدد الصفقات المفتوحة بنفس الوقت |
 | `max_total_open_risk_pct` | `3` | Sum of all open risk, % of balance | مجموع مخاطرة كل الصفقات المفتوحة |
 | `max_trades_per_day` | `10` | New trades per day | عدد الصفقات باليوم |
+| `max_same_side_risk_pct` | `2` | Cap on total open risk in one direction (correlation) | حد مجموع المخاطرة بنفس الاتجاه، لأن العملات تتحرك سوا |
+
+## Discipline · الانضباط
+
+| key | default | meaning | المعنى |
+| --- | --- | --- | --- |
+| `max_losses_per_day` | `3` | Stop for the day after this many losing trades | توقف لباقي اليوم بعد هذا العدد من الخسائر |
+| `cooldown_after_losses` | `2` | Losses in a row that trigger a cooldown | عدد الخسائر المتتالية اللي تفعّل الاستراحة |
+| `cooldown_minutes` | `60` | Length of the cooldown (`0` = until tomorrow) | مدة الاستراحة بالدقايق (0 = لباجر) |
+| `reduce_risk_after_drawdown_used_pct` | `50` | Cut risk once this much of the drawdown allowance is used | تقليل المخاطرة بعد استهلاك هذي النسبة من الـ drawdown |
+| `reduced_risk_factor` | `0.5` | Risk multiplier while reduced | معامل تقليل المخاطرة |
+| `tz_offset_hours` | `3` | Your local time vs UTC, for the review | فرق توقيتك عن UTC، للمراجعة |
+
+Set any of these to `0` to switch it off.
 
 ## Prop firm · شركة التحدي
 
