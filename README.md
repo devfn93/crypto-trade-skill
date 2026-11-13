@@ -9,8 +9,8 @@ on past data, plan a trade, size it from the money you are willing to lose,
 check it against your own rules and your prop-firm limits, and show you where
 your journal makes and loses money. **Claude never places an order: you do.**
 
-Free, MIT, no signup, no API keys. The tools are plain Python (standard library,
-3.9+) that do arithmetic on files in a `crypto/` folder.
+Free, MIT, no signup, no API keys. The tools are plain Python 3 (standard library only,
+tested on 3.12 and 3.13) that do arithmetic on files in a `crypto/` folder.
 
 ---
 
