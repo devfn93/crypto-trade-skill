@@ -10,7 +10,7 @@ check it against your own rules and your prop-firm limits, and show you where
 your journal makes and loses money. **Claude never places an order: you do.**
 
 Free, MIT, no signup, no API keys. The tools are plain Python (standard library,
-3.8+) that do arithmetic on files in a `crypto/` folder.
+3.9+) that do arithmetic on files in a `crypto/` folder.
 
 ---
 
